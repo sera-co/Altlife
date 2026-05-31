@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16
+    container_name: lm_postgres
+    environment:
+      POSTGRES_DB: library_management
+      POSTGRES_USER: library_user
+      POSTGRES_PASSWORD: library_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - lm_postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lm_backend
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: library_management
+      DB_USER: library_user
+      DB_PASSWORD: library_password
+      API_KEY: ${API_KEY:-change-me}
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lm_frontend
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:3001
+    ports:
+      - "3000:80"
+
+volumes:
+  lm_postgres_data:
+
